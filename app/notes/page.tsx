@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import CreateNoteForm from '../components/CreateNoteForm'
 
 export default async function notesPage() {
   // 1. Initialize the server-side Supabase client
@@ -15,19 +16,20 @@ export default async function notesPage() {
   }
 
   // 4. Test insert into db notes table
-  const { data: newNote, error: insertError } = await supabase
-    .from('notes')
-    .insert({
-      content: 'Hello, Supabase!',
-      author: 'Lebron James'
-    })
+  // const { data: newNote, error: insertError } = await supabase
+  //   .from('notes')
+  //   .insert({
+  //     content: 'Hello, Supabase!',
+  //     author: 'Lebron James'
+  //   })
 
   console.log("notes", notes);
 
   // 4. Render the data
   return (
-    <main className="p-8">
+    <main className="p-8 space-y-8">
       <h1 className="text-2xl font-bold mb-4">My notes</h1>
+      <CreateNoteForm />
       <ul className="space-y-2">
         {notes?.map((note: any) => (
           <li key={note.id} className="p-4 border rounded shadow-sm">
