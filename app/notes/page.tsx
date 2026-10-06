@@ -14,6 +14,14 @@ export default async function notesPage() {
     return <div>Error loading notes: {error.message}</div>
   }
 
+  // 4. Test insert into db notes table
+  const { data: newNote, error: insertError } = await supabase
+    .from('notes')
+    .insert({
+      content: 'Hello, Supabase!',
+      author: 'Lebron James'
+    })
+
   console.log("notes", notes);
 
   // 4. Render the data
