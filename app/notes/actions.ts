@@ -47,6 +47,18 @@ export async function deleteNoteAction(id: string) {
     return { success: true }
 }
 
-export async function editNoteAction(id: string, updatedContent: string, updaatedAuthor: string) {
+export async function editNoteAction(id: string, updatedContent: string, updatedAuthor: string) {
+    const supabase = await createClient()
 
+    const { error } = await supabase
+        .from('notes')
+        .update({ content: updatedContent, author: updatedAuthor })
+        .eq('id', id)
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    revalidatePath('/notes')
+    return { success: true }
 }
