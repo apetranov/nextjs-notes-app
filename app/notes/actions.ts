@@ -28,7 +28,7 @@ export async function createNoteAction(formData: FormData) {
     return { success: true }
 }
 
-export default async function deleteNoteAction(id: string) {
+export async function deleteNoteAction(id: string) {
     // 1. Initialize the Supabase server client
     const supabase = await createClient()
 
@@ -43,6 +43,22 @@ export default async function deleteNoteAction(id: string) {
     }
 
     // 3. Refresh the page data immediately so the deleted note is removed from the list
+    revalidatePath('/notes')
+    return { success: true }
+}
+
+export async function editNoteAction(id: string, updatedContent: string, updatedAuthor: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+        .from('notes')
+        .update({ content: updatedContent, author: updatedAuthor })
+        .eq('id', id)
+
+    if (error) {
+        return { error: error.message }
+    }
+
     revalidatePath('/notes')
     return { success: true }
 }
