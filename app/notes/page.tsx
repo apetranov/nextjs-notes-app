@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import CreateNoteForm from '../components/CreateNoteForm'
-import deleteNoteAction from './actions'
 import Note from '../components/Note'
 
 export default async function notesPage() {
