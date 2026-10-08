@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import CreateNoteForm from '../components/CreateNoteForm'
 import deleteNoteAction from './actions'
+import Note from '../components/Note'
 
 export default async function notesPage() {
   // 1. Initialize the server-side Supabase client
@@ -33,18 +34,7 @@ export default async function notesPage() {
       <CreateNoteForm />
       <ul className="space-y-2">
         {notes?.map((note: any) => (
-          <li key={note.id} className="p-4 border rounded shadow-sm">
-            {/* Replace 'name' with an actual column name from your table */}
-            <span className="font-bold">{note.content || JSON.stringify(note)}</span>  
-            <br />
-            <span>by {note.author}</span>
-            <button onClick={async () => {
-              'use server'
-              await deleteNoteAction(note.id)
-            }} className="ml-2 px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600">
-              Delete
-            </button>
-          </li>
+          <Note key={note.id} note={note} />
         ))}
       </ul>
     </main>
