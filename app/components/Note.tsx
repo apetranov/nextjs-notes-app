@@ -1,30 +1,30 @@
 'use client'
 import { useState, useEffect } from "react";
 import { deleteNoteAction, editNoteAction } from "../notes/actions"
+// 💡 Import the global store helpers
+import { getGlobalCooldown, subscribeToGlobalCooldown, startGlobalCooldown } from "@/lib/globalCooldown"
 
 export default function Note({ note }: { note: any }) {
     const [isEditing, setIsEditing] = useState(false);
     const [updatedContent, setUpdatedContent] = useState(note.content);
     const [updatedAuthor, setUpdatedAuthor] = useState(note.author);
     
-    // 💡 Track network activity and cooldown counters individually
     const [isDeleting, setIsDeleting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [cooldown, setCooldown] = useState(0);
+    
+    // 💡 Read from the shared global clock state
+    const [globalCooldownTime, setGlobalCooldownTime] = useState(getGlobalCooldown());
 
-    // 💡 Active countdown clock logic
+    // 💡 Wire up the global listener allocation
     useEffect(() => {
-        if (cooldown <= 0) return;
+        const unsubscribe = subscribeToGlobalCooldown((time) => {
+            setGlobalCooldownTime(time);
+        });
+        return unsubscribe;
+    }, []);
 
-        const timer = setInterval(() => {
-            setCooldown((prev) => prev - 1);
-        }, 1000);
-
-        return () => clearInterval(timer);
-    }, [cooldown]);
-
-    // Combined state helper to completely freeze all note fields/actions during any processing window
-    const isLocked = isDeleting || isSaving || cooldown > 0;
+    // 💡 Global cooldown blocks operations on this note instance instantly
+    const isLocked = isDeleting || isSaving || globalCooldownTime > 0;
 
     const handleDelete = async () => {
         if (isLocked) return;
@@ -34,9 +34,12 @@ export default function Note({ note }: { note: any }) {
             const result = await deleteNoteAction(note.id);
             if (result?.error) {
                 alert(`Error deleting: ${result.error}`);
-                setIsDeleting(false); // Only unlock if the deletion failed
+                setIsDeleting(false);
+            } else {
+                // 💡 If a deletion is successful, lock all REMAINING notes for 10s
+                startGlobalCooldown(10);
+                alert('Note deleted successfully!');
             }
-            // If successful, Next.js handles removing the node, no cooldown necessary for a deleted row!
         } catch (err) {
             console.error(err);
             setIsDeleting(false);
@@ -47,7 +50,6 @@ export default function Note({ note }: { note: any }) {
         if (isLocked) return;
 
         if (isEditing) {
-            // Guard clause to avoid writing empty values
             if (!updatedContent.trim() || !updatedAuthor.trim()) {
                 alert("Fields cannot be empty.");
                 return;
@@ -59,7 +61,9 @@ export default function Note({ note }: { note: any }) {
                 
                 if (result?.success) {
                     setIsEditing(false);
-                    setCooldown(10); // 💡 Trigger the 10s cooldown penalty upon successful save
+                    // 💡 Trigger the 10s cooldown penalty GLOBALLY across all notes
+                    startGlobalCooldown(10); 
+                    alert('Note edited successfully!');
                 } else if (result?.error) {
                     alert(`Error saving: ${result.error}`);
                 }
@@ -128,15 +132,15 @@ export default function Note({ note }: { note: any }) {
                     }`}
                 >
                     {isSaving && 'Saving...'}
-                    {!isSaving && !isEditing && cooldown > 0 && `Wait ${cooldown}s`}
-                    {!isSaving && !isEditing && cooldown === 0 && 'Edit'}
+                    {!isSaving && !isEditing && globalCooldownTime > 0 && `Wait ${globalCooldownTime}s`}
+                    {!isSaving && !isEditing && globalCooldownTime === 0 && 'Edit'}
                     {!isSaving && isEditing && 'Save'}
                 </button>
 
                 {/* Anti-Spam Message HUD element */}
-                {!isEditing && cooldown > 0 && (
+                {!isEditing && globalCooldownTime > 0 && (
                     <span className="text-xs text-amber-600 font-medium animate-pulse ml-2">
-                        ⏳ Cooldown active ({cooldown}s)
+                        ⏳ List lock active ({globalCooldownTime}s)
                     </span>
                 )}
             </div>
