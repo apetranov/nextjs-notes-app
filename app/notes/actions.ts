@@ -1,10 +1,22 @@
 'use server'
 
 import { createClient } from "@/lib/supabase/server"
+import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 
+async function getAuthedClient() {
+    const { userId, getToken } = await auth()
+    if (!userId) throw new Error("Unauthorized access attempt.")
+    
+    // Fetch the token using your native Clerk integration template
+    const token = await getToken() 
+    const supabase = await createClient(token)
+    
+    return { supabase, userId }
+}
+
 export async function createNoteAction(formData: FormData) {
-    const supabase = await createClient()
+    const { supabase, userId } = await getAuthedClient()
 
     // Extract variables out of the form fields
     const content = formData.get('content') as string
@@ -17,7 +29,7 @@ export async function createNoteAction(formData: FormData) {
     // Insert into Supabase
     const { data: newNote, error } = await supabase
         .from('notes')
-        .insert({ content, author });
+        .insert({ content, author, user_id: userId });
 
     if (error) {
         return { error: error.message }
@@ -30,7 +42,7 @@ export async function createNoteAction(formData: FormData) {
 
 export async function deleteNoteAction(id: string) {
     // 1. Initialize the Supabase server client
-    const supabase = await createClient()
+    const { supabase } = await getAuthedClient()
 
     // 2. Delete the note with the given ID
     const { error } = await supabase
@@ -48,7 +60,7 @@ export async function deleteNoteAction(id: string) {
 }
 
 export async function editNoteAction(id: string, updatedContent: string, updatedAuthor: string) {
-    const supabase = await createClient()
+    const { supabase } = await getAuthedClient()
 
     const { error } = await supabase
         .from('notes')

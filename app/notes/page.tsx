@@ -3,10 +3,11 @@ import { auth } from '@clerk/nextjs/server'
 import CreateNoteForm from '../components/CreateNoteForm'
 import Note from '../components/Note'
 
+
 export default async function notesPage() {
 
   // await auth.protect()
-  const { isAuthenticated, redirectToSignIn } = await auth()
+  const { userId, getToken, isAuthenticated, redirectToSignIn } = await auth()
 
   if (!isAuthenticated) {
     // Add logic to handle the unauthenticated user
@@ -14,10 +15,11 @@ export default async function notesPage() {
     return redirectToSignIn()
   }
 
+  
 
-
-  // 1. Initialize the server-side Supabase client
-  const supabase = await createClient()
+  // 1. Fetch token and initialize authenticated client instance
+  const token = await getToken()
+  const supabase = await createClient(token)
 
   // 2. Query all rows and columns from your table
   const { data: notes, error } = await supabase
