@@ -1,8 +1,21 @@
 import { createClient } from '@/lib/supabase/server'
+import { auth } from '@clerk/nextjs/server'
 import CreateNoteForm from '../components/CreateNoteForm'
 import Note from '../components/Note'
 
 export default async function notesPage() {
+
+  // await auth.protect()
+  const { isAuthenticated, redirectToSignIn } = await auth()
+
+  if (!isAuthenticated) {
+    // Add logic to handle the unauthenticated user
+    // This example uses the `redirectToSignIn()` method to redirect the user to the sign-in page
+    return redirectToSignIn()
+  }
+
+
+
   // 1. Initialize the server-side Supabase client
   const supabase = await createClient()
 
